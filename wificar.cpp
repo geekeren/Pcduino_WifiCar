@@ -1,8 +1,8 @@
 #include <core.h>
 #include <stdio.h>
 #include <pthread.h>
-#include <key.c>
 #define PWM_PERIOD 20000
+#include <ControlServer.h>
 
 //pin numbers
 int E1 = 10;  
@@ -15,7 +15,7 @@ int ServoPin = 9;
 int speed = 0;
 int angle = 90;
 boolean forward = true;
-
+struct CarVector* carVectorPointer = new CarVector;
 //set plus of servo
 void servoSetPulse(int pin,int pulse)
 {
@@ -30,7 +30,7 @@ void servoSetAngle(int pin,int angle)
 {
 	if(angle >= 0 && angle <= 180)
 	{
-		servoSetPulse(pin,angle * 7 + 920);
+		servoSetPulse(pin,angle * 7 + 960);
 	}
 }
 
@@ -73,23 +73,14 @@ void initPins(){
 }
 //listen cmd
 void *listenCmd(void*){
-	while(1){
-		int i = scanKeyboard();
-		switch(i){
-			case 'e':
-				printf("e to Stop\n");setSpeed(0);break;
-			case 'w':
-				printf("Forward\n");setForward(true);setAngle(90);setSpeed(100);break;
-			case 's':
-				printf("Slow or backward\n");setForward(false);setSpeed(100);break;
-			case 'a':
-				printf("Left\n");setAngle(angle+10);break;
-			case 'd':
-				printf("Right\n");setAngle(angle-10);break;
-		}
-		
-		
-	}
+    carVectorPointer->speed = 0;
+    carVectorPointer->angle = 90;
+    carVectorPointer->direction = 1;
+    ControlServer server(carVectorPointer);
+    printf("Listen Cmd Service started!\n");
+    server.start();	
+
+	
 }
 
 //start Listen Cmd Service
@@ -102,7 +93,7 @@ void startListenCmdService(){
 	exit (1);
 	}
 	//pthread_join(id,NULL);
-	printf("Listen Cmd Service started!\n");
+	
 
 }
 
@@ -114,10 +105,16 @@ void setup()
  
 void loop()
 
- {  	
-    servoSetAngle(ServoPin,angle);
+ {
+		// for(int i =0;i<10;i++)	
+   	//servoSetAngle(ServoPin,carVectorPointer->angle);
+	setSpeed(carVectorPointer->speed);
+	setForward(carVectorPointer->direction==1);
+ for(int i =0;i<20;i++)
+	  servoSetAngle(ServoPin,carVectorPointer->angle);
+ delay(100);
 	//printf("%d\n",angle);
-	delay(50);
+//	delay(50);
 	//prinf(angle);
 
  }
